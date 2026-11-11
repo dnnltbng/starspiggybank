@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classroom Star Piggy Bank</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        skyBg: '#d7f3fe',
+                        inputBg: '#b3ecff',
+                        badgeBg: '#fff6e5',
+                        badgeNumberBg: '#96e5ff',
+                        btnGreen: '#00b865',
+                        btnRed: '#e52521',
+                    },
+                    fontFamily: {
+                        sans: ['"Zen Maru Gothic"', '"Fredoka"', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #d7f3fe;
+            user-select: none;
+            touch-action: manipulation;
+        }
+
+        /* Input styling */
+        .custom-input {
+            background-color: #b3ecff;
+            color: #0f172a;
+            border-radius: 9999px;
+            text-align: center;
+            font-weight: 700;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+        .custom-input::placeholder {
+            color: #000000;
+            font-weight: 600;
+            opacity: 1;
+        }
+        .custom-input:focus {
+            box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.4);
+            background-color: #a0e5fc;
+        }
+
+        /* Grade pills styling */
+        .grade-btn {
+            background-color: #ffffff;
+            color: #7c3aed;
+            font-weight: 700;
+            border-radius: 9999px;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+        }
+        .grade-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(124, 58, 237, 0.15);
+        }
+        .grade-btn.active {
+            background-color: #7c3aed;
+            color: #ffffff;
+            box-shadow: 0 6px 18px rgba(124, 58, 237, 0.35);
+            transform: scale(1.05);
+        }
+
+        /* Pop animation for piggy bank score change */
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+        .animate-pop {
+            animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* Floating star animation */
+        @keyframes floatUpStar {
+            0% {
+                opacity: 1;
+                transform: translate(-50%, 0) scale(0.6) rotate(0deg);
+            }
+            50% {
+                opacity: 1;
+                transform: translate(-50%, -80px) scale(1.4) rotate(180deg);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(-50%, -150px) scale(1) rotate(360deg);
+            }
+        }
+        .floating-star {
+            position: absolute;
+            pointer-events: none;
+            animation: floatUpStar 0.9s ease-out forwards;
+            z-index: 50;
+        }
+
+        /* Remove spin buttons from input number */
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between items-center p-4 sm:p-6 md:p-8 font-sans">
+
+    <!-- Header Title -->
+    <header class="w-full max-w-4xl text-center pt-2">
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-indigo-900 tracking-wide">
+            ⭐ 班級星星儲蓄銀行 ⭐
+        </h1>
+    </header>
+
+    <!-- Main Container -->
+    <main class="w-full max-w-4xl flex flex-col items-center justify-center my-auto space-y-6 sm:space-y-8">
+
+        <!-- Piggy Bank Outer Card Frame -->
+        <div class="relative bg-white rounded-[40px] sm:rounded-[50px] p-6 sm:p-10 md:p-12 w-full max-w-2xl shadow-sm flex justify-center items-center overflow-hidden border border-white/60">
+            
+            <!-- Floating Stars Container -->
+            <div id="starsAnimationContainer" class="absolute inset-0 pointer-events-none"></div>
+
+            <!-- Redesigned Adorable Piggy Bank Vector Graphic -->
+            <div class="relative w-full max-w-[420px] aspect-[4/3] flex items-center justify-center">
+                <svg viewBox="0 0 500 400" class="w-full h-full drop-shadow-md select-none" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <!-- Piggy Body Soft Gradient -->
+                        <linearGradient id="pigGradient" x1="100" y1="50" x2="400" y2="350" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stop-color="#ffffff"/>
+                            <stop offset="35%" stop-color="#fff5f7"/>
+                            <stop offset="100%" stop-color="#ffe4ec"/>
+                        </linearGradient>
+
+                        <!-- Snout Soft Gradient -->
+                        <linearGradient id="snoutGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#ffb6c1"/>
+                            <stop offset="100%" stop-color="#ff9ebb"/>
+                        </linearGradient>
+
+                        <!-- Coin Slot Gradient -->
+                        <linearGradient id="slotGradient" x1="0" y1="0" x2="1" y2="0">
+                            <stop offset="0%" stop-color="#2a2a2a"/>
+                            <stop offset="50%" stop-color="#000000"/>
+                            <stop offset="100%" stop-color="#2a2a2a"/>
+                        </linearGradient>
+                    </defs>
+
+                    <!-- Back Ear -->
+                    <path d="M155 85 C 130 35, 175 25, 195 75 Z" fill="#ffccd5" stroke="#2d3748" stroke-width="6" stroke-linejoin="round" />
+
+                    <!-- Back Feet -->
+                    <rect x="200" y="295" width="45" height="50" rx="22.5" fill="#fbb6ce" stroke="#2d3748" stroke-width="6"/>
+                    <rect x="315" y="295" width="45" height="50" rx="22.5" fill="#fbb6ce" stroke="#2d3748" stroke-width="6"/>
+
+                    <!-- Curly Tail -->
+                    <path d="M425 180 C 455 160, 475 190, 450 205 C 435 215, 440 185, 460 175" stroke="#2d3748" stroke-width="6" stroke-linecap="round" fill="none"/>
+
+                    <!-- Coin Slot on Top -->
+                    <ellipse cx="270" cy="72" rx="36" ry="10" fill="url(#slotGradient)" stroke="#2d3748" stroke-width="5" />
+                    <rect x="240" y="66" width="60" height="10" rx="5" fill="#000000" />
+
+                    <!-- Main Pig Body -->
+                    <ellipse cx="270" cy="205" rx="160" ry="120" fill="url(#pigGradient)" stroke="#2d3748" stroke-width="6" />
+
+                    <!-- Front Ear -->
+                    <path d="M190 85 C 165 30, 220 20, 235 80 Z" fill="#ffb6c1" stroke="#2d3748" stroke-width="6" stroke-linejoin="round" />
+
+                    <!-- Front Feet -->
+                    <rect x="175" y="300" width="48" height="52" rx="24" fill="url(#pigGradient)" stroke="#2d3748" stroke-width="6"/>
+                    <rect x="290" y="300" width="48" height="52" rx="24" fill="url(#pigGradient)" stroke="#2d3748" stroke-width="6"/>
+
+                    <!-- Cute Eyes & Highlights -->
+                    <ellipse cx="178" cy="170" rx="8" ry="12" fill="#2d3748" />
+                    <circle cx="176" cy="166" r="3" fill="white" />
+                    <circle cx="180" cy="173" r="1.5" fill="white" />
+
+                    <!-- Rosy Blush Cheek -->
+                    <ellipse cx="160" cy="200" rx="14" ry="9" fill="#ff85a1" opacity="0.6" />
+
+                    <!-- Snout -->
+                    <ellipse cx="120" cy="205" rx="28" ry="22" fill="url(#snoutGradient)" stroke="#2d3748" stroke-width="5" />
+                    <!-- Nostrils -->
+                    <ellipse cx="110" cy="205" rx="4" ry="7" fill="#2d3748" />
+                    <ellipse cx="130" cy="205" rx="4" ry="7" fill="#2d3748" />
+
+                    <!-- Pig Belly Highlight Line -->
+                    <path d="M220 105 C 330 90, 400 130, 410 200" stroke="#ffffff" stroke-width="7" stroke-linecap="round" opacity="0.8" fill="none"/>
+                </svg>
+
+                <!-- Central Star Badge Inside Piggy Belly -->
+                <div id="piggyBadge" class="absolute left-[54%] top-[50%] -translate-x-1/2 -translate-y-1/2 bg-[#fff6e5] rounded-3xl sm:rounded-[28px] px-3 sm:px-4 py-2 sm:py-2.5 flex items-center space-x-2 sm:space-x-3 shadow-md border-2 border-amber-200/90 transition-transform">
+                    <div class="bg-[#96e5ff] rounded-2xl px-3 sm:px-5 py-1 sm:py-2 flex items-center justify-center border border-sky-300/60 shadow-inner">
+                        <span id="starScore" class="text-3xl sm:text-4xl md:text-5xl font-black text-slate-800 tracking-tight">24</span>
+                    </div>
+                    <!-- Crayon Style Hand-drawn Star Icon -->
+                    <div class="text-amber-400 text-3xl sm:text-4xl md:text-5xl flex items-center justify-center select-none">
+                        <svg class="w-9 h-9 sm:w-11 sm:h-11" viewBox="0 0 24 24" fill="#facc15" stroke="#f59e0b" stroke-width="1.5" stroke-linejoin="round">
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls Section: Plus & Minus Inputs -->
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 w-full max-w-xl">
+            
+            <!-- Plus (Add Stars) Card -->
+            <div class="bg-white rounded-3xl p-3 sm:p-3.5 pl-4 sm:pl-5 flex items-center justify-between shadow-sm w-full sm:w-1/2 border border-white/80">
+                <input type="number" id="plusInput" min="1" max="999" placeholder="type here" class="custom-input w-full py-2 sm:py-2.5 text-sm sm:text-base mr-3">
+                <button id="plusBtn" title="Add Stars" class="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-[#00b865] hover:bg-[#00a359] active:scale-95 text-white flex items-center justify-center transition-all shadow-md flex-shrink-0">
+                    <svg class="w-6 h-6 sm:w-7 sm:h-7 stroke-[3.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Minus (Subtract Stars) Card -->
+            <div class="bg-white rounded-3xl p-3 sm:p-3.5 pl-4 sm:pl-5 flex items-center justify-between shadow-sm w-full sm:w-1/2 border border-white/80">
+                <input type="number" id="minusInput" min="1" max="999" placeholder="type here" class="custom-input w-full py-2 sm:py-2.5 text-sm sm:text-base mr-3">
+                <button id="minusBtn" title="Reduce Stars" class="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-[#e52521] hover:bg-[#cf1d19] active:scale-95 text-white flex items-center justify-center transition-all shadow-md flex-shrink-0">
+                    <svg class="w-6 h-6 sm:w-7 sm:h-7 stroke-[3.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14" />
+                    </svg>
+                </button>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Bottom Grade Navigation Bar -->
+    <footer class="w-full max-w-4xl pb-4 pt-2">
+        <div class="grid grid-cols-3 sm:grid-cols-6 gap-2.5 sm:gap-3 md:gap-4 px-2">
+            <button class="grade-btn py-2.5 sm:py-3 text-sm sm:text-base font-bold text-center" data-grade="1">一年級</button>
+            <button class="grade-btn py-2.5 sm:py-3 text-sm sm:text-base font-bold text-center" data-grade="2">二年級</button>
+            <button class="grade-btn py-2.5 sm:py-3 text-sm sm:text-base font-bold text-center" data-grade="3">三年級</button>
+            <button class="grade-btn py-2.5 sm:py-3 text-sm sm:text-base font-bold text-center" data-grade="4">四年級</button>
+            <button class="grade-btn py-2.5 sm:py-3 text-sm sm:text-base font-bold text-center" data-grade="5">五年級</button>
+            <button class="grade-btn py-2.5 sm:py-3 text-sm sm:text-base font-bold text-center" data-grade="6">六年級</button>
+        </div>
+    </footer>
+
+    <!-- App Logic Script -->
+    <script>
+        // State Management
+        let currentGrade = 1;
+        
+        // Initial default star balances for grades
+        const defaultScores = { 1: 24, 2: 15, 3: 30, 4: 42, 5: 18, 6: 50 };
+
+        // Load grade scores from LocalStorage or fallback to defaults
+        let gradeScores = JSON.parse(localStorage.getItem('starPiggyScores')) || defaultScores;
+
+        // Web Audio API Synthesizer Sound Effects
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playAddSound() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
+            // Cheerful coin/bell chime
+            const now = audioCtx.currentTime;
+            
+            const osc1 = audioCtx.createOscillator();
+            const gain1 = audioCtx.createGain();
+            osc1.type = 'sine';
+            osc1.frequency.setValueAtTime(987.77, now); // B5
+            osc1.frequency.exponentialRampToValueAtTime(1318.51, now + 0.1); // E6
+
+            gain1.gain.setValueAtTime(0.3, now);
+            gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+            osc1.connect(gain1);
+            gain1.connect(audioCtx.destination);
+            
+            osc1.start(now);
+            osc1.stop(now + 0.35);
+        }
+
+        function playSubtractSound() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            // Low pop / descending tone
+            const now = audioCtx.currentTime;
+            
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(320, now);
+            osc.frequency.exponentialRampToValueAtTime(150, now + 0.18);
+
+            gain.gain.setValueAtTime(0.25, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start(now);
+            osc.stop(now + 0.18);
+        }
+
+        // Save scores to localStorage
+        function saveScores() {
+            localStorage.setItem('starPiggyScores', JSON.stringify(gradeScores));
+        }
+
+        // Update UI state for selected grade
+        function updateDisplay(animate = false) {
+            const starScoreEl = document.getElementById('starScore');
+            const piggyBadge = document.getElementById('piggyBadge');
+
+            starScoreEl.textContent = gradeScores[currentGrade];
+
+            if (animate) {
+                piggyBadge.classList.remove('animate-pop');
+                void piggyBadge.offsetWidth; // trigger reflow
+                piggyBadge.classList.add('animate-pop');
+            }
+
+            // Update grade buttons active styling
+            document.querySelectorAll('.grade-btn').forEach(btn => {
+                const grade = parseInt(btn.getAttribute('data-grade'));
+                if (grade === currentGrade) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+
+        // Create floating stars animation on add
+        function triggerFloatingStars(count = 3) {
+            const container = document.getElementById('starsAnimationContainer');
+            const badge = document.getElementById('piggyBadge');
+            const rect = badge.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+
+            const originX = rect.left + rect.width / 2 - containerRect.left;
+            const originY = rect.top + rect.height / 2 - containerRect.top;
+
+            for (let i = 0; i < Math.min(count, 8); i++) {
+                setTimeout(() => {
+                    const star = document.createElement('div');
+                    star.className = 'floating-star text-amber-400 text-3xl sm:text-4xl';
+                    star.innerHTML = '⭐';
+                    
+                    // Offset horizontally
+                    const randomOffsetX = (Math.random() - 0.5) * 60;
+                    star.style.left = `${originX + randomOffsetX}px`;
+                    star.style.top = `${originY}px`;
+
+                    container.appendChild(star);
+
+                    setTimeout(() => star.remove(), 900);
+                }, i * 80);
+            }
+        }
+
+        // Event Handlers
+        function handleAdd() {
+            const input = document.getElementById('plusInput');
+            const amount = parseInt(input.value) || 1; // Default to 1 if empty
+            
+            gradeScores[currentGrade] += amount;
+            saveScores();
+            updateDisplay(true);
+            playAddSound();
+            triggerFloatingStars(Math.min(amount, 6));
+
+            input.value = '';
+        }
+
+        function handleSubtract() {
+            const input = document.getElementById('minusInput');
+            const amount = parseInt(input.value) || 1; // Default to 1 if empty
+
+            gradeScores[currentGrade] = Math.max(0, gradeScores[currentGrade] - amount);
+            saveScores();
+            updateDisplay(true);
+            playSubtractSound();
+
+            input.value = '';
+        }
+
+        // Initialize Event Listeners
+        window.addEventListener('DOMContentLoaded', () => {
+            updateDisplay();
+
+            // Plus & Minus Buttons
+            document.getElementById('plusBtn').addEventListener('click', handleAdd);
+            document.getElementById('minusBtn').addEventListener('click', handleSubtract);
+
+            // Allow pressing Enter in inputs
+            document.getElementById('plusInput').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') handleAdd();
+            });
+            document.getElementById('minusInput').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') handleSubtract();
+            });
+
+            // Grade Navigation Buttons
+            document.querySelectorAll('.grade-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    currentGrade = parseInt(btn.getAttribute('data-grade'));
+                    updateDisplay(true);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
